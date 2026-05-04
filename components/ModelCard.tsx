@@ -30,7 +30,7 @@ const SENTIMENT_STYLES: Record<string, string> = {
 const PROVIDER_MAP: Record<string, string> = {
   'GPT-4o Mini': 'OpenAI',
   'Claude Haiku 4.5': 'Anthropic',
-  'Gemini 2.0 Flash': 'Google',
+  'Gemini 2.5 Flash': 'Google',
   'Llama 3.3 70B': 'Groq',
 }
 

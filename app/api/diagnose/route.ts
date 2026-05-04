@@ -8,7 +8,7 @@ import { scoreResponse } from '@/lib/scorer'
 import { saveQuery } from '@/lib/supabase'
 import type { DiagnosticResult, ModelResult } from '@/types'
 
-const MODEL_NAMES = ['GPT-4o Mini', 'Claude Haiku 4.5', 'Gemini 2.0 Flash', 'Llama 3.3 70B']
+const MODEL_NAMES = ['GPT-4o Mini', 'Claude Haiku 4.5', 'Gemini 2.5 Flash', 'Llama 3.3 70B']
 
 const anthropicClient = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
