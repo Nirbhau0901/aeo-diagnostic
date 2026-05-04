@@ -13,6 +13,14 @@ const GRADE_STYLES: Record<string, string> = {
   F: 'text-red-700 bg-red-50 border-red-200',
 }
 
+const GRADE_LEFT_BORDER: Record<string, string> = {
+  A: 'border-l-emerald-500',
+  B: 'border-l-blue-500',
+  C: 'border-l-amber-500',
+  D: 'border-l-orange-500',
+  F: 'border-l-red-500',
+}
+
 const SENTIMENT_STYLES: Record<string, string> = {
   positive: 'bg-emerald-100 text-emerald-700',
   neutral: 'bg-zinc-100 text-zinc-600',
@@ -33,35 +41,88 @@ const PROVIDER_STYLES: Record<string, string> = {
   Groq: 'bg-purple-50 text-purple-700',
 }
 
-function HighlightedText({ text, highlight }: { text: string; highlight: string }) {
-  if (!highlight.trim()) {
-    return <span className="whitespace-pre-wrap">{text}</span>
-  }
+function highlightBrand(text: string, highlight: string) {
+  if (!highlight.trim()) return <>{text}</>
   const escaped = highlight.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
   const parts = text.split(new RegExp(`(${escaped})`, 'gi'))
-  const lowerHighlight = highlight.toLowerCase()
+  const lower = highlight.toLowerCase()
   return (
-    <span className="whitespace-pre-wrap">
-      {parts.map((part, i) =>
-        part.toLowerCase() === lowerHighlight ? (
+    <>
+      {parts.map((p, i) =>
+        p.toLowerCase() === lower ? (
           <mark key={i} className="bg-yellow-200 text-yellow-900 rounded-sm px-0.5 not-italic">
-            {part}
+            {p}
           </mark>
         ) : (
-          <span key={i}>{part}</span>
+          <span key={i}>{p}</span>
         )
       )}
-    </span>
+    </>
+  )
+}
+
+function renderInline(text: string, brandName: string) {
+  const boldParts = text.split(/(\*\*[^*]+\*\*)/)
+  if (boldParts.length === 1) return highlightBrand(text, brandName)
+  return (
+    <>
+      {boldParts.map((part, i) =>
+        part.startsWith('**') && part.endsWith('**') ? (
+          <strong key={i} className="font-semibold text-zinc-800">
+            {highlightBrand(part.slice(2, -2), brandName)}
+          </strong>
+        ) : (
+          <span key={i}>{highlightBrand(part, brandName)}</span>
+        )
+      )}
+    </>
+  )
+}
+
+function renderMarkdown(text: string, brandName: string) {
+  const lines = text.split('\n')
+  return (
+    <div className="space-y-0.5 text-sm leading-relaxed text-zinc-700">
+      {lines.map((line, i) => {
+        if (/^#{1,3}\s/.test(line)) {
+          return (
+            <p key={i} className="font-semibold text-zinc-800 mt-1.5 first:mt-0">
+              {renderInline(line.replace(/^#{1,3}\s+/, ''), brandName)}
+            </p>
+          )
+        }
+        if (/^\d+\.\s/.test(line)) {
+          const num = line.match(/^(\d+)/)?.[1]
+          return (
+            <div key={i} className="flex gap-1.5">
+              <span className="shrink-0 font-medium text-zinc-400 tabular-nums">{num}.</span>
+              <span>{renderInline(line.replace(/^\d+\.\s+/, ''), brandName)}</span>
+            </div>
+          )
+        }
+        if (/^[-*•]\s/.test(line)) {
+          return (
+            <div key={i} className="flex gap-1.5">
+              <span className="shrink-0 text-zinc-400">•</span>
+              <span>{renderInline(line.replace(/^[-*•]\s+/, ''), brandName)}</span>
+            </div>
+          )
+        }
+        if (line.trim() === '') return <div key={i} className="h-1" />
+        return <p key={i}>{renderInline(line, brandName)}</p>
+      })}
+    </div>
   )
 }
 
 export function ModelCard({ result, brandName }: ModelCardProps) {
   const provider = PROVIDER_MAP[result.model] ?? 'Unknown'
   const gradeStyle = GRADE_STYLES[result.grade] ?? GRADE_STYLES.F
+  const leftBorder = GRADE_LEFT_BORDER[result.grade] ?? 'border-l-red-500'
   const providerStyle = PROVIDER_STYLES[provider] ?? 'bg-zinc-100 text-zinc-600'
 
   return (
-    <div className="rounded-2xl border bg-white p-5 shadow-sm space-y-4">
+    <div className={`rounded-2xl border border-l-4 ${leftBorder} bg-white p-5 shadow-sm space-y-4`}>
       {/* Header row */}
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
@@ -106,10 +167,10 @@ export function ModelCard({ result, brandName }: ModelCardProps) {
             )}
           </div>
 
-          {/* Response text */}
+          {/* Response with markdown rendering */}
           {result.response && (
-            <div className="max-h-52 overflow-y-auto rounded-lg bg-zinc-50 px-3 py-2.5 text-sm leading-relaxed text-zinc-700">
-              <HighlightedText text={result.response} highlight={brandName} />
+            <div className="max-h-52 overflow-y-auto rounded-lg bg-zinc-50 px-3 py-2.5">
+              {renderMarkdown(result.response, brandName)}
             </div>
           )}
         </>

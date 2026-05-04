@@ -100,14 +100,21 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-zinc-50">
+    <div className="dot-grid min-h-screen flex flex-col">
       {/* Header */}
-      <header className="border-b bg-white">
-        <div className="mx-auto max-w-5xl px-4 py-4">
+      <header className="sticky top-0 z-10 border-b bg-white/90 backdrop-blur-sm">
+        <div className="mx-auto max-w-5xl px-4 py-5">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h1 className="text-xl font-bold tracking-tight text-zinc-900">⚡ AEO Diagnostic</h1>
-              <p className="text-sm text-zinc-500">See how AI recommends your brand</p>
+              <h1 className="text-2xl font-bold tracking-tight">
+                ⚡{' '}
+                <span className="bg-gradient-to-r from-violet-600 to-blue-600 bg-clip-text text-transparent">
+                  AEO Diagnostic
+                </span>
+              </h1>
+              <p className="mt-0.5 text-sm text-zinc-500">
+                See how AI search engines rank and recommend your brand
+              </p>
             </div>
             <div className="flex gap-1 self-start rounded-lg border border-zinc-200 bg-zinc-50 p-1 sm:self-auto">
               {(['diagnostic', 'history'] as const).map((tab) => (
@@ -228,6 +235,10 @@ export default function Home() {
           </div>
         )}
       </main>
+
+      <footer className="mt-auto border-t bg-white/80 py-4 text-center text-xs text-zinc-400">
+        Built for Pixii.ai | Powered by GPT-4o, Claude, Gemini, Llama
+      </footer>
     </div>
   )
 }
