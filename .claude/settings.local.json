@@ -1,7 +1,15 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npm run *)"
+      "Bash(npm run *)",
+      "Bash(npm install *)",
+      "Bash(npx shadcn *)",
+      "Bash(node -e \"require\\('@supabase/auth-helpers-nextjs'\\)\")",
+      "Bash(node -e \"const m = require\\('@supabase/auth-helpers-nextjs'\\); console.log\\(Object.keys\\(m\\).filter\\(k => k.includes\\('Route'\\) || k.includes\\('route'\\)\\)\\)\")",
+      "Bash(node -e \"const m = require\\('@supabase/auth-helpers-nextjs'\\); console.log\\(Object.keys\\(m\\)\\)\")",
+      "Bash(node -e \"const m = require\\('@supabase/auth-helpers-nextjs'\\); console.log\\(typeof m.createServerClient, typeof m.createBrowserClient\\)\")",
+      "Bash(node -e \"const m = require\\('@supabase/auth-ui-react'\\); console.log\\(Object.keys\\(m\\)\\)\")",
+      "Bash(Get-ChildItem node_modules/@supabase/auth-ui-react/dist -Name)"
     ]
   }
 }

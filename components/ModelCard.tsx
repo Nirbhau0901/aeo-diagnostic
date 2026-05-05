@@ -1,56 +1,42 @@
-import type { ModelResult } from '@/types'
+"use client"
+
+import { Card, CardContent, CardHeader } from "@/components/ui/card"
+import { GradeBadge } from "@/components/grade-badge"
+import { TrendingUp, TrendingDown, Minus, Bot, Brain, Sparkles, Cpu } from "lucide-react"
+import { cn } from "@/lib/utils"
+import type { ModelResult } from "@/types"
 
 interface ModelCardProps {
   result: ModelResult
   brandName: string
 }
 
-const GRADE_STYLES: Record<string, string> = {
-  A: 'text-emerald-700 bg-emerald-50 border-emerald-200',
-  B: 'text-blue-700 bg-blue-50 border-blue-200',
-  C: 'text-amber-700 bg-amber-50 border-amber-200',
-  D: 'text-orange-700 bg-orange-50 border-orange-200',
-  F: 'text-red-700 bg-red-50 border-red-200',
+type Grade = "A" | "B" | "C" | "D" | "F"
+
+const MODEL_LOGOS: Record<string, React.ReactNode> = {
+  "GPT-4o Mini": <Bot className="w-5 h-5" />,
+  "Claude Haiku 4.5": <Brain className="w-5 h-5" />,
+  "Gemini 2.5 Flash": <Sparkles className="w-5 h-5" />,
+  "Llama 3.3 70B": <Cpu className="w-5 h-5" />,
 }
 
-const GRADE_LEFT_BORDER: Record<string, string> = {
-  A: 'border-l-emerald-500',
-  B: 'border-l-blue-500',
-  C: 'border-l-amber-500',
-  D: 'border-l-orange-500',
-  F: 'border-l-red-500',
-}
-
-const SENTIMENT_STYLES: Record<string, string> = {
-  positive: 'bg-emerald-100 text-emerald-700',
-  neutral: 'bg-zinc-100 text-zinc-600',
-  negative: 'bg-red-100 text-red-700',
-}
-
-const PROVIDER_MAP: Record<string, string> = {
-  'GPT-4o Mini': 'OpenAI',
-  'Claude Haiku 4.5': 'Anthropic',
-  'Gemini 2.5 Flash': 'Google',
-  'Llama 3.3 70B': 'Groq',
-}
-
-const PROVIDER_STYLES: Record<string, string> = {
-  OpenAI: 'bg-emerald-50 text-emerald-700',
-  Anthropic: 'bg-orange-50 text-orange-700',
-  Google: 'bg-blue-50 text-blue-700',
-  Groq: 'bg-purple-50 text-purple-700',
+const MODEL_PROVIDER: Record<string, string> = {
+  "GPT-4o Mini": "OpenAI",
+  "Claude Haiku 4.5": "Anthropic",
+  "Gemini 2.5 Flash": "Google",
+  "Llama 3.3 70B": "Groq / Meta",
 }
 
 function highlightBrand(text: string, highlight: string) {
   if (!highlight.trim()) return <>{text}</>
-  const escaped = highlight.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-  const parts = text.split(new RegExp(`(${escaped})`, 'gi'))
+  const escaped = highlight.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+  const parts = text.split(new RegExp(`(${escaped})`, "gi"))
   const lower = highlight.toLowerCase()
   return (
     <>
       {parts.map((p, i) =>
         p.toLowerCase() === lower ? (
-          <mark key={i} className="bg-yellow-200 text-yellow-900 rounded-sm px-0.5 not-italic">
+          <mark key={i} className="bg-yellow-500/30 text-yellow-200 rounded-sm px-0.5 not-italic">
             {p}
           </mark>
         ) : (
@@ -67,8 +53,8 @@ function renderInline(text: string, brandName: string) {
   return (
     <>
       {boldParts.map((part, i) =>
-        part.startsWith('**') && part.endsWith('**') ? (
-          <strong key={i} className="font-semibold text-zinc-800">
+        part.startsWith("**") && part.endsWith("**") ? (
+          <strong key={i} className="font-semibold text-foreground">
             {highlightBrand(part.slice(2, -2), brandName)}
           </strong>
         ) : (
@@ -80,14 +66,14 @@ function renderInline(text: string, brandName: string) {
 }
 
 function renderMarkdown(text: string, brandName: string) {
-  const lines = text.split('\n')
+  const lines = text.split("\n")
   return (
-    <div className="space-y-0.5 text-sm leading-relaxed text-zinc-700">
+    <div className="space-y-0.5 text-xs leading-relaxed text-muted-foreground">
       {lines.map((line, i) => {
         if (/^#{1,3}\s/.test(line)) {
           return (
-            <p key={i} className="font-semibold text-zinc-800 mt-1.5 first:mt-0">
-              {renderInline(line.replace(/^#{1,3}\s+/, ''), brandName)}
+            <p key={i} className="font-semibold text-foreground mt-1.5 first:mt-0">
+              {renderInline(line.replace(/^#{1,3}\s+/, ""), brandName)}
             </p>
           )
         }
@@ -95,20 +81,20 @@ function renderMarkdown(text: string, brandName: string) {
           const num = line.match(/^(\d+)/)?.[1]
           return (
             <div key={i} className="flex gap-1.5">
-              <span className="shrink-0 font-medium text-zinc-400 tabular-nums">{num}.</span>
-              <span>{renderInline(line.replace(/^\d+\.\s+/, ''), brandName)}</span>
+              <span className="shrink-0 font-medium tabular-nums">{num}.</span>
+              <span>{renderInline(line.replace(/^\d+\.\s+/, ""), brandName)}</span>
             </div>
           )
         }
         if (/^[-*•]\s/.test(line)) {
           return (
             <div key={i} className="flex gap-1.5">
-              <span className="shrink-0 text-zinc-400">•</span>
-              <span>{renderInline(line.replace(/^[-*•]\s+/, ''), brandName)}</span>
+              <span className="shrink-0">•</span>
+              <span>{renderInline(line.replace(/^[-*•]\s+/, ""), brandName)}</span>
             </div>
           )
         }
-        if (line.trim() === '') return <div key={i} className="h-1" />
+        if (line.trim() === "") return <div key={i} className="h-1" />
         return <p key={i}>{renderInline(line, brandName)}</p>
       })}
     </div>
@@ -116,65 +102,91 @@ function renderMarkdown(text: string, brandName: string) {
 }
 
 export function ModelCard({ result, brandName }: ModelCardProps) {
-  const provider = PROVIDER_MAP[result.model] ?? 'Unknown'
-  const gradeStyle = GRADE_STYLES[result.grade] ?? GRADE_STYLES.F
-  const leftBorder = GRADE_LEFT_BORDER[result.grade] ?? 'border-l-red-500'
-  const providerStyle = PROVIDER_STYLES[provider] ?? 'bg-zinc-100 text-zinc-600'
+  const logo = MODEL_LOGOS[result.model] ?? <Bot className="w-5 h-5" />
+  const provider = MODEL_PROVIDER[result.model] ?? "AI Model"
+  const grade = (result.grade as Grade) || "F"
 
   return (
-    <div className={`rounded-2xl border border-l-4 ${leftBorder} bg-white p-5 shadow-sm space-y-4`}>
-      {/* Header row */}
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="font-semibold text-zinc-900 truncate">{result.model}</p>
-          <span className={`mt-1 inline-block rounded-full px-2.5 py-0.5 text-xs font-medium ${providerStyle}`}>
-            {provider}
-          </span>
-        </div>
-        <div
-          className={`flex size-14 shrink-0 items-center justify-center rounded-xl border-2 text-3xl font-bold ${gradeStyle}`}
-        >
-          {result.grade}
-        </div>
-      </div>
-
-      {result.error && !result.mentioned ? (
-        <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-red-700">
-          Error contacting model
-        </div>
-      ) : (
-        <>
-          {/* Status badges */}
-          <div className="flex flex-wrap gap-2">
-            <span
-              className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                result.mentioned ? 'bg-emerald-100 text-emerald-700' : 'bg-zinc-100 text-zinc-500'
-              }`}
-            >
-              {result.mentioned ? 'Mentioned' : 'Not mentioned'}
-            </span>
-            {result.mentioned && result.position !== null && (
-              <span className="rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-700">
-                Ranked #{result.position}
-              </span>
-            )}
-            {result.mentioned && (
-              <span
-                className={`rounded-full px-2.5 py-0.5 text-xs font-medium capitalize ${SENTIMENT_STYLES[result.sentiment]}`}
-              >
-                {result.sentiment}
-              </span>
-            )}
-          </div>
-
-          {/* Response with markdown rendering */}
-          {result.response && (
-            <div className="max-h-52 overflow-y-auto rounded-lg bg-zinc-50 px-3 py-2.5">
-              {renderMarkdown(result.response, brandName)}
+    <Card className="bg-card/50 backdrop-blur-sm border-border/50 hover:border-primary/30 transition-all duration-300 group">
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-secondary/50 flex items-center justify-center text-primary">
+              {logo}
             </div>
-          )}
-        </>
-      )}
-    </div>
+            <div>
+              <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors">
+                {result.model}
+              </h3>
+              <p className="text-xs text-muted-foreground">{provider}</p>
+            </div>
+          </div>
+          <GradeBadge grade={grade} size="md" />
+        </div>
+      </CardHeader>
+
+      <CardContent className="pt-0 space-y-3">
+        {result.error && !result.mentioned ? (
+          <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2.5 text-sm text-destructive-foreground">
+            Error contacting model
+          </div>
+        ) : (
+          <>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <p className="text-xs text-muted-foreground uppercase tracking-wider">Score</p>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-2xl font-bold text-foreground">{result.score}</span>
+                  <span className="text-xs text-muted-foreground">/100</span>
+                </div>
+              </div>
+              <div className="space-y-1">
+                <p className="text-xs text-muted-foreground uppercase tracking-wider">Sentiment</p>
+                <div className="flex items-center gap-1.5">
+                  <span
+                    className={cn(
+                      "text-sm font-semibold capitalize",
+                      !result.mentioned
+                        ? "text-muted-foreground"
+                        : result.sentiment === "positive"
+                          ? "text-emerald-400"
+                          : result.sentiment === "negative"
+                            ? "text-rose-400"
+                            : "text-muted-foreground"
+                    )}
+                  >
+                    {result.mentioned ? result.sentiment : "Not mentioned"}
+                  </span>
+                  {result.mentioned && result.sentiment === "positive" && (
+                    <TrendingUp className="w-3.5 h-3.5 text-emerald-400" />
+                  )}
+                  {result.mentioned && result.sentiment === "negative" && (
+                    <TrendingDown className="w-3.5 h-3.5 text-rose-400" />
+                  )}
+                  {result.mentioned && result.sentiment === "neutral" && (
+                    <Minus className="w-3.5 h-3.5 text-muted-foreground" />
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {result.mentioned && result.position !== null && (
+              <div className="flex items-center gap-1.5 text-xs">
+                <span className="text-muted-foreground">Ranked</span>
+                <span className="font-semibold text-primary">#{result.position}</span>
+              </div>
+            )}
+
+            {result.response && (
+              <div className="pt-3 border-t border-border/50">
+                <div className="max-h-40 overflow-y-auto rounded-lg bg-secondary/30 px-3 py-2.5">
+                  {renderMarkdown(result.response, brandName)}
+                </div>
+              </div>
+            )}
+          </>
+        )}
+      </CardContent>
+    </Card>
   )
 }

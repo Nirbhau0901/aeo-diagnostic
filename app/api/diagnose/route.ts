@@ -5,7 +5,6 @@ import { queryAnthropic } from '@/lib/anthropic'
 import { queryGemini } from '@/lib/gemini'
 import { queryGroq } from '@/lib/groq'
 import { scoreResponse } from '@/lib/scorer'
-import { saveQuery } from '@/lib/supabase'
 import type { DiagnosticResult, ModelResult } from '@/types'
 
 const MODEL_NAMES = ['GPT-4o Mini', 'Claude Haiku 4.5', 'Gemini 2.5 Flash', 'Llama 3.3 70B']
@@ -103,12 +102,6 @@ export async function POST(request: NextRequest) {
     competitorMentions,
     tips,
     createdAt: new Date().toISOString(),
-  }
-
-  try {
-    await saveQuery(diagnosticResult)
-  } catch {
-    // Save failure should not block the response
   }
 
   return NextResponse.json(diagnosticResult)

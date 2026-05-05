@@ -1,12 +1,17 @@
 'use client'
 
-import { useState } from 'react'
 import { Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 interface QueryInputProps {
   onSubmit: (query: string, brandName: string, competitors: string[]) => void
   isLoading: boolean
+  query: string
+  brandName: string
+  competitorsRaw: string
+  onQueryChange: (value: string) => void
+  onBrandNameChange: (value: string) => void
+  onCompetitorsRawChange: (value: string) => void
 }
 
 const EXAMPLE_QUERIES = [
@@ -16,13 +21,18 @@ const EXAMPLE_QUERIES = [
 ]
 
 const inputClass =
-  'w-full rounded-lg border border-zinc-200 bg-zinc-50 px-4 py-2.5 text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-900 focus:border-transparent transition-shadow'
+  'w-full rounded-lg border border-border/50 bg-secondary/30 px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-shadow'
 
-export function QueryInput({ onSubmit, isLoading }: QueryInputProps) {
-  const [query, setQuery] = useState('')
-  const [brandName, setBrandName] = useState('')
-  const [competitorsRaw, setCompetitorsRaw] = useState('')
-
+export function QueryInput({
+  onSubmit,
+  isLoading,
+  query,
+  brandName,
+  competitorsRaw,
+  onQueryChange,
+  onBrandNameChange,
+  onCompetitorsRawChange,
+}: QueryInputProps) {
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!query.trim() || isLoading) return
@@ -34,23 +44,30 @@ export function QueryInput({ onSubmit, isLoading }: QueryInputProps) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="rounded-2xl border bg-white p-6 shadow-sm space-y-4">
+    <form
+      onSubmit={handleSubmit}
+      className="rounded-2xl border border-border/50 bg-card/50 backdrop-blur-sm p-6 space-y-4"
+    >
       <div className="space-y-2">
-        <label className="text-sm font-semibold text-zinc-800">Product query</label>
+        <label className="text-sm font-semibold text-foreground">Product query</label>
         <textarea
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          onChange={(e) => onQueryChange(e.target.value)}
           placeholder="e.g. best magnesium supplement for seniors"
           rows={2}
-          className="w-full resize-none rounded-lg border border-zinc-200 bg-zinc-50 px-4 py-3 text-base text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-900 focus:border-transparent transition-shadow"
+          className="w-full resize-none rounded-lg border border-border/50 bg-secondary/30 px-4 py-3 text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-shadow"
         />
         <div className="flex flex-wrap gap-2">
           {EXAMPLE_QUERIES.map((q) => (
             <button
               key={q}
               type="button"
-              onClick={() => setQuery(q)}
-              className="rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs text-zinc-500 transition-colors hover:border-zinc-300 hover:bg-zinc-100 hover:text-zinc-800"
+              onClick={() => onQueryChange(q)}
+              className={`rounded-full border px-3 py-1 text-xs font-medium transition-all duration-150 ${
+                query === q
+                  ? 'border-primary/50 bg-primary/10 text-primary'
+                  : 'border-border/50 bg-secondary/20 text-muted-foreground hover:border-primary/30 hover:bg-secondary/50 hover:text-foreground'
+              }`}
             >
               {q}
             </button>
@@ -60,25 +77,26 @@ export function QueryInput({ onSubmit, isLoading }: QueryInputProps) {
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="space-y-1.5">
-          <label className="text-sm font-semibold text-zinc-800">
-            Brand name <span className="font-normal text-zinc-400">(optional)</span>
+          <label className="text-sm font-semibold text-foreground">
+            Brand name <span className="font-normal text-muted-foreground">(optional)</span>
           </label>
           <input
             type="text"
             value={brandName}
-            onChange={(e) => setBrandName(e.target.value)}
+            onChange={(e) => onBrandNameChange(e.target.value)}
             placeholder="e.g. Garden of Life"
             className={inputClass}
           />
         </div>
         <div className="space-y-1.5">
-          <label className="text-sm font-semibold text-zinc-800">
-            Competitors <span className="font-normal text-zinc-400">(optional, comma-separated)</span>
+          <label className="text-sm font-semibold text-foreground">
+            Competitors{' '}
+            <span className="font-normal text-muted-foreground">(optional, comma-separated)</span>
           </label>
           <input
             type="text"
             value={competitorsRaw}
-            onChange={(e) => setCompetitorsRaw(e.target.value)}
+            onChange={(e) => onCompetitorsRawChange(e.target.value)}
             placeholder="e.g. Nature Made, NOW Foods"
             className={inputClass}
           />
@@ -93,7 +111,7 @@ export function QueryInput({ onSubmit, isLoading }: QueryInputProps) {
         {isLoading ? (
           <>
             <Loader2 className="size-4 animate-spin" />
-            Running diagnostic…
+            Analyzing…
           </>
         ) : (
           'Run Diagnostic'
