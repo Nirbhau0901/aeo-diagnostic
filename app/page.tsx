@@ -4,9 +4,10 @@ import { useState, useEffect } from 'react'
 import type { LucideIcon } from 'lucide-react'
 import type { Session } from '@supabase/supabase-js'
 import { motion } from 'framer-motion'
-import { BarChart2, Brain, Eye, LogOut, RotateCcw, Sparkles, Target, X, Zap } from 'lucide-react'
+import { BarChart2, Brain, Eye, LogOut, RotateCcw, Sparkles, Target, Zap } from 'lucide-react'
 import { supabaseClient } from '@/lib/supabase-client'
 import { AuthModal } from '@/components/AuthModal'
+import { ReportModal } from '@/components/ReportModal'
 import { QueryInput } from '@/components/QueryInput'
 import { ModelCard } from '@/components/ModelCard'
 import { CompetitorTable } from '@/components/CompetitorTable'
@@ -91,8 +92,8 @@ export default function Home() {
   const [history, setHistory] = useState<QueryHistory[]>([])
   const [historyLoading, setHistoryLoading] = useState(false)
   const [historyError, setHistoryError] = useState<string | null>(null)
-  const [viewingHistoryResult, setViewingHistoryResult] = useState<DiagnosticResult | null>(null)
-  const [viewingHistoryMeta, setViewingHistoryMeta] = useState<{ queryText: string; createdAt: string } | null>(null)
+  const [showReportModal, setShowReportModal] = useState(false)
+  const [modalResult, setModalResult] = useState<DiagnosticResult | null>(null)
 
   useEffect(() => {
     async function initSession() {
@@ -123,8 +124,6 @@ export default function Home() {
     setIsLoading(true)
     setError(null)
     setResult(null)
-    setViewingHistoryResult(null)
-    setViewingHistoryMeta(null)
     try {
       const res = await fetch('/api/diagnose', {
         method: 'POST',
@@ -183,11 +182,8 @@ export default function Home() {
   }
 
   function handleViewHistory(item: QueryHistory) {
-    setResult(null)
-    setViewingHistoryResult(item.results)
-    setViewingHistoryMeta({ queryText: item.query_text, createdAt: item.created_at })
-    setActiveTab('diagnostic')
-    window.scrollTo({ top: 0, behavior: 'smooth' })
+    setModalResult(item.results)
+    setShowReportModal(true)
   }
 
   async function handleSignOut() {
@@ -196,15 +192,13 @@ export default function Home() {
 
   function handleNewDiagnosis() {
     setResult(null)
-    setViewingHistoryResult(null)
-    setViewingHistoryMeta(null)
     setQuery('')
     setBrandName('')
     setCompetitorsRaw('')
     setError(null)
   }
 
-  const displayResult = result ?? viewingHistoryResult
+  const displayResult = result
 
   if (sessionLoading) {
     return (
@@ -384,34 +378,6 @@ export default function Home() {
                     </button>
                   </div>
 
-                  {/* Amber banner shown only when viewing a historical result */}
-                  {!result && viewingHistoryMeta && (
-                    <div className="flex items-start justify-between gap-4 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3">
-                      <div className="min-w-0">
-                        <p className="text-xs font-semibold text-amber-400 uppercase tracking-wide">
-                          Viewing past diagnostic
-                        </p>
-                        <p className="mt-0.5 truncate text-sm font-medium text-foreground">
-                          {viewingHistoryMeta.queryText}
-                        </p>
-                        <p className="mt-0.5 text-xs text-muted-foreground">
-                          {new Date(viewingHistoryMeta.createdAt).toLocaleDateString('en-US', {
-                            month: 'long',
-                            day: 'numeric',
-                            year: 'numeric',
-                          })}
-                        </p>
-                      </div>
-                      <button
-                        onClick={() => { setViewingHistoryResult(null); setViewingHistoryMeta(null) }}
-                        className="shrink-0 mt-0.5 text-muted-foreground hover:text-foreground transition-colors"
-                        aria-label="Dismiss"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                    </div>
-                  )}
-
                   <OverallScore score={displayResult.overallScore} results={displayResult.results} />
 
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -543,6 +509,9 @@ export default function Home() {
       </div>
 
       {showAuthModal && <AuthModal onClose={() => setShowAuthModal(false)} />}
+      {showReportModal && modalResult && (
+        <ReportModal result={modalResult} onClose={() => setShowReportModal(false)} />
+      )}
     </div>
   )
 }
