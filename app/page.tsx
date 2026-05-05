@@ -105,13 +105,21 @@ export default function Home() {
     const { data: { subscription } } = supabaseClient.auth.onAuthStateChange((_event, session) => {
       setSession(session)
       setSessionLoading(false)
-      if (session) setShowAuthModal(false)
+      if (session) {
+        setShowAuthModal(false)
+      } else {
+        setActiveTab('diagnostic')
+      }
     })
 
     return () => subscription.unsubscribe()
   }, [])
 
   async function handleDiagnose(query: string, brandName: string, competitors: string[]) {
+    if (!session) {
+      setShowAuthModal(true)
+      return
+    }
     setIsLoading(true)
     setError(null)
     setResult(null)
@@ -126,14 +134,14 @@ export default function Home() {
       if (!res.ok) throw new Error('Diagnostic request failed')
       const data = (await res.json()) as DiagnosticResult
       setResult(data)
-      const { data: { session } } = await supabaseClient.auth.getSession()
+      const { data: { session: currentSession } } = await supabaseClient.auth.getSession()
       await supabaseClient.from('queries').insert({
         query_text: query,
         brand_name: brandName || '',
         competitors: competitors || [],
         results: data,
         overall_score: data.overallScore,
-        user_id: session?.user?.id,
+        user_id: currentSession?.user?.id,
       })
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong')
@@ -143,14 +151,18 @@ export default function Home() {
   }
 
   async function loadHistory() {
+    if (!session) {
+      setShowAuthModal(true)
+      return
+    }
     setHistoryLoading(true)
     setHistoryError(null)
     try {
-      const { data: { session } } = await supabaseClient.auth.getSession()
+      const { data: { session: currentSession } } = await supabaseClient.auth.getSession()
       const { data } = await supabaseClient
         .from('queries')
         .select('*')
-        .eq('user_id', session?.user?.id)
+        .eq('user_id', currentSession?.user?.id)
         .order('created_at', { ascending: false })
         .limit(20)
       setHistory(data || [])
@@ -162,6 +174,10 @@ export default function Home() {
   }
 
   function handleTabChange(tab: Tab) {
+    if (tab === 'history' && !session) {
+      setShowAuthModal(true)
+      return
+    }
     setActiveTab(tab)
     if (tab === 'history') loadHistory()
   }
@@ -196,48 +212,6 @@ export default function Home() {
         <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center animate-pulse">
           <Sparkles className="w-5 h-5 text-white" />
         </div>
-      </div>
-    )
-  }
-
-  if (!session) {
-    return (
-      <div className="min-h-screen bg-background flex flex-col">
-        <div className="fixed inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent/5 pointer-events-none" />
-        <div className="relative flex flex-1 flex-col items-center justify-center px-6 text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 24 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="max-w-lg space-y-8"
-          >
-            <div className="flex justify-center">
-              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-lg shadow-primary/20">
-                <Sparkles className="w-8 h-8 text-white" />
-              </div>
-            </div>
-            <div className="space-y-3">
-              <h1 className="text-4xl font-bold text-foreground">AEO Diagnostic</h1>
-              <p className="text-muted-foreground text-lg leading-relaxed">
-                See how AI engines rank your brand across GPT-4o, Claude, Gemini, and Llama — and get actionable tips to improve your visibility.
-              </p>
-            </div>
-            <button
-              onClick={() => setShowAuthModal(true)}
-              className="inline-flex items-center gap-2 rounded-xl bg-primary px-7 py-3 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors shadow-md shadow-primary/20"
-            >
-              <Sparkles className="w-4 h-4" />
-              Sign in to run your AEO Diagnostic
-            </button>
-            <p className="text-xs text-muted-foreground">
-              Free to use · Powered by GPT-4o, Claude, Gemini, Llama
-            </p>
-          </motion.div>
-        </div>
-        <footer className="relative border-t border-border/50 bg-card/30 py-4 text-center text-xs text-muted-foreground">
-          AEO Diagnostic | Built for Pixii.ai | Powered by GPT-4o Mini, Claude Haiku, Gemini 2.5 Flash, Llama 3.3
-        </footer>
-        {showAuthModal && <AuthModal onClose={() => setShowAuthModal(false)} />}
       </div>
     )
   }
@@ -281,17 +255,28 @@ export default function Home() {
                 </div>
 
                 <div className="flex items-center gap-2 border-l border-border/50 pl-3">
-                  <span className="hidden md:block text-xs text-muted-foreground truncate max-w-[160px]">
-                    {session.user.email}
-                  </span>
-                  <button
-                    onClick={handleSignOut}
-                    className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs text-muted-foreground hover:text-foreground hover:bg-secondary/50 transition-colors"
-                    title="Sign out"
-                  >
-                    <LogOut className="w-3.5 h-3.5" />
-                    <span className="hidden sm:inline">Sign out</span>
-                  </button>
+                  {session ? (
+                    <>
+                      <span className="hidden md:block text-xs text-muted-foreground truncate max-w-[160px]">
+                        {session.user.email}
+                      </span>
+                      <button
+                        onClick={handleSignOut}
+                        className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs text-muted-foreground hover:text-foreground hover:bg-secondary/50 transition-colors"
+                        title="Sign out"
+                      >
+                        <LogOut className="w-3.5 h-3.5" />
+                        <span className="hidden sm:inline">Sign out</span>
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      onClick={() => setShowAuthModal(true)}
+                      className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
+                    >
+                      Sign In
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
@@ -452,9 +437,15 @@ export default function Home() {
                   className="space-y-5"
                 >
                   <p className="text-center text-sm text-muted-foreground">
-                    Welcome,{' '}
-                    <span className="font-medium text-foreground">{session.user.email}</span>
-                    {' '}— enter a query above to get started.
+                    {session ? (
+                      <>
+                        Welcome,{' '}
+                        <span className="font-medium text-foreground">{session.user.email}</span>
+                        {' '}— enter a query above to get started.
+                      </>
+                    ) : (
+                      'Enter a query above and sign in to run your AI visibility diagnostic.'
+                    )}
                   </p>
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                     {USE_CASES.map(({ icon: Icon, title, description }) => (
@@ -550,6 +541,8 @@ export default function Home() {
           AEO Diagnostic | Built for Pixii.ai | Powered by GPT-4o Mini, Claude Haiku, Gemini 2.5 Flash, Llama 3.3
         </footer>
       </div>
+
+      {showAuthModal && <AuthModal onClose={() => setShowAuthModal(false)} />}
     </div>
   )
 }
