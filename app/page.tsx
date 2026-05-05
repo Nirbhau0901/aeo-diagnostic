@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import type { LucideIcon } from 'lucide-react'
 import type { Session } from '@supabase/supabase-js'
 import { motion } from 'framer-motion'
-import { BarChart2, Brain, Eye, LogOut, Sparkles, Target, X, Zap } from 'lucide-react'
+import { BarChart2, Brain, Eye, LogOut, RotateCcw, Sparkles, Target, X, Zap } from 'lucide-react'
 import { supabaseClient } from '@/lib/supabase-client'
 import { AuthModal } from '@/components/AuthModal'
 import { QueryInput } from '@/components/QueryInput'
@@ -178,6 +178,16 @@ export default function Home() {
     await supabaseClient.auth.signOut()
   }
 
+  function handleNewDiagnosis() {
+    setResult(null)
+    setViewingHistoryResult(null)
+    setViewingHistoryMeta(null)
+    setQuery('')
+    setBrandName('')
+    setCompetitorsRaw('')
+    setError(null)
+  }
+
   const displayResult = result ?? viewingHistoryResult
 
   if (sessionLoading) {
@@ -261,7 +271,7 @@ export default function Home() {
                       onClick={() => handleTabChange(tab)}
                       className={`rounded-md px-4 py-1.5 text-sm font-medium capitalize transition-colors ${
                         activeTab === tab
-                          ? 'bg-card text-foreground shadow-sm'
+                          ? 'bg-white text-zinc-900 shadow-sm font-semibold'
                           : 'text-muted-foreground hover:text-foreground'
                       }`}
                     >
@@ -378,6 +388,17 @@ export default function Home() {
                   transition={{ duration: 0.4 }}
                   className="space-y-6"
                 >
+                  {/* New Diagnosis button */}
+                  <div className="flex justify-end">
+                    <button
+                      onClick={handleNewDiagnosis}
+                      className="flex items-center gap-2 rounded-xl border border-primary/40 px-4 py-2 text-sm font-medium text-primary hover:bg-primary/10 transition-colors"
+                    >
+                      <RotateCcw className="w-4 h-4" />
+                      New Diagnosis
+                    </button>
+                  </div>
+
                   {/* Amber banner shown only when viewing a historical result */}
                   {!result && viewingHistoryMeta && (
                     <div className="flex items-start justify-between gap-4 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3">

@@ -23,27 +23,45 @@ function countOccurrences(haystack: string, needle: string): number {
   return count
 }
 
-async function generateTips(query: string, brandName: string): Promise<string[]> {
-  const prompt = `Based on these AI responses about "${query}", give 3-5 specific tips to improve AEO for brand ${brandName}. Format as a numbered list.`
+async function generateTips(query: string, brandName: string, results: ModelResult[]): Promise<string[]> {
+  const tipsPrompt = `You are an AEO (Answer Engine Optimization) expert.
+
+A brand called "${brandName || 'this brand'}" was searched across AI models with the query: "${query}"
+
+Results: ${results.map(r => `${r.model}: ${r.mentioned ? `Mentioned at position #${r.position}` : 'Not mentioned'}`).join(', ')}
+
+Give exactly 5 specific, actionable AEO improvement tips for this brand. Each tip must be:
+- A complete sentence of at least 2-3 sentences
+- Specific to the query and brand category
+- Immediately actionable
+
+Format as a JSON array of strings only, no other text:
+["tip 1 full text here", "tip 2 full text here", "tip 3 full text here", "tip 4 full text here", "tip 5 full text here"]`
   try {
     const message = await anthropicClient.messages.create({
       model: 'claude-haiku-4-5-20251001',
-      max_tokens: 512,
-      messages: [{ role: 'user', content: prompt }],
+      max_tokens: 1024,
+      messages: [{ role: 'user', content: tipsPrompt }],
     })
     const block = message.content[0]
     if (block.type !== 'text') return []
-    return block.text
-      .split('\n')
-      .map((line) => line.trim())
-      .filter((line) => /^\d+[.)]\s+/.test(line))
-      .map((line) => line.replace(/^\d+[.)]\s+/, '').trim())
-      .filter((line) => line.length > 0)
+    const jsonMatch = block.text.match(/\[[\s\S]*\]/)
+    if (jsonMatch) {
+      const parsed = JSON.parse(jsonMatch[0]) as unknown[]
+      if (Array.isArray(parsed)) {
+        return parsed
+          .filter((t): t is string => typeof t === 'string' && t.length > 0)
+          .slice(0, 5)
+      }
+    }
+    return []
   } catch {
     return [
-      'Ensure your brand is explicitly named in product descriptions and listings.',
-      'Build authoritative content that AI models are likely to reference.',
-      'Collect and publish verified customer reviews to strengthen brand signals.',
+      'Ensure your brand is explicitly named in product descriptions and listings to increase the likelihood of AI models mentioning it. Use consistent brand naming across all content and metadata.',
+      'Build authoritative long-form content targeting your key product queries. AI models prioritize well-structured, comprehensive content when formulating recommendations.',
+      'Collect and prominently display verified customer reviews. Social proof signals are a strong indicator that AI models use to identify reputable brands.',
+      "Optimize your brand's presence on high-authority platforms like Amazon, industry publications, and review sites. AI models aggregate data from these sources when generating responses.",
+      'Create structured FAQ content that directly answers common queries in your niche. This format is highly indexed by AI models and significantly increases brand mention probability.',
     ]
   }
 }
@@ -91,7 +109,7 @@ export async function POST(request: NextRequest) {
       ? Math.round(successful.reduce((sum, r) => sum + r.score, 0) / successful.length)
       : 0
 
-  const tips = await generateTips(query, brandName)
+  const tips = await generateTips(query, brandName, results)
 
   const diagnosticResult: DiagnosticResult = {
     query,
